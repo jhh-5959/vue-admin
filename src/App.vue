@@ -1,10 +1,9 @@
 <template>
     <div id="app">
         <router-link to="/"></router-link>
-        <router-view/>
+        <router-view></router-view>
     </div>
 </template>
 <style lang="scss">
     #app {}
-
 </style>

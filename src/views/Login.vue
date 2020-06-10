@@ -1,7 +1,7 @@
 <template>
     <div id="login">
         <ul id="title">
-            <li v-for="(item,index) in mag" :key="item.id" @click="isActive(index)"
+            <li v-for="(item,index) in mag" :key="item.id" @click="isActive(index,'ruleForm')"
                 :class="{ active:changeIndex==index}">{{ item.text }}
             </li>
         </ul>
@@ -10,37 +10,44 @@
                      class="demo-ruleForm" size="medium">
                 <!--验证用户名/邮箱-->
                 <el-form-item prop="userName">
-                    <label>邮箱</label>
-                    <el-input type="text" v-model="ruleForm.userName" autocomplete="off"></el-input>
+                    <label for="userName">邮箱</label>
+                    <el-input id="userName" type="text" v-model="ruleForm.userName" autocomplete="off"></el-input>
                 </el-form-item>
                 <!--验证密码-->
                 <el-form-item prop="pass">
-                    <label>密码</label>
-                    <el-input type="text" v-model="ruleForm.pass" autocomplete="off" maxlength="20"
+                    <label for="passWord">密码</label>
+                    <el-input id="passWord" type="text" v-model="ruleForm.pass" autocomplete="off" maxlength="20"
                               minlength="6"></el-input>
                 </el-form-item>
 
                 <!--确认密码-->
                 <el-form-item prop="checkPass" v-show="changeIndex">
-                    <label>确认密码</label>
-                    <el-input type="text" v-model="ruleForm.checkPass" autocomplete="off"></el-input>
+                    <label for="checkPassWord">确认密码</label>
+                    <el-input id="checkPassWord" type="text" v-model="ruleForm.checkPass" autocomplete="off"></el-input>
                 </el-form-item>
 
                 <!--验证码-->
                 <el-form-item prop="code">
-                    <label>验证码</label>
-                    <el-row :gutter="20">
+                    <label for="code">验证码</label>
+                    <el-row :gutter="19">
                         <el-col :span="15">
-                            <el-input type="text" v-model="ruleForm.code" class="code" autocomplete="off"></el-input>
+                            <el-input id="code" type="text" v-model="ruleForm.code" class="code"
+                                      autocomplete="off"></el-input>
                         </el-col>
                         <el-col :span="5">
-                            <el-button type="success" class="btn-success">获取验证码</el-button>
+                            <el-button type="success" class="btn-success" @click="getCode()"
+                                       :disabled="codeBtnStatus.status">{{codeBtnStatus.text}}
+                            </el-button>
                         </el-col>
                     </el-row>
                 </el-form-item>
                 <!--登录按钮-->
                 <el-form-item>
-                    <el-button type="primary" @click="submitForm('ruleForm')" class="btn-login">登录</el-button>
+                    <el-button type="primary" @click="submitForm('ruleForm')" class="btn-login"
+                               :disabled="loginBtnStatus">{{
+                        changeIndex?'注册':'登录'
+                        }}
+                    </el-button>
                 </el-form-item>
             </el-form>
         </div>
@@ -48,13 +55,32 @@
 </template>
 
 <script>
-    import {stripscript,VerifyUserName,VerifyPass,VerifyCode} from '@/verification/verification'
+    //工具栏
+    import {stripscript, VerifyUserName, VerifyPass, VerifyCode, isNullorFormat} from '@/tools/verification'
+    //使用Vue3.0语法需要 按需导入 对应的API
+    import {reactive, ref, isRef} from '@vue/composition-api';
+
+    //按需调用 login.js 接口文件
+    import {postCodeApi, postLoginApi, postRegisterApi} from '@/api/login';
+
 
     export default {
         name: "Login",
-        data() {
+        /*setup(props, context) {
+            console.log(context);
+            this.$atts => context.attrs
+            this.$slots => context.slots
+            this.$parent=> context.parent
+            this.$emit=> context.emit
+            this.$refs=> context.refs
+            this=> context.root
+            */
+
+        //Vue3.0语法中的Api
+        setup(props, {root, refs}) {
+            //自定义函数名的形式
             /*验证邮箱*/
-            var validateUserName = (rule, value, callback) => {
+            let validateUserName = (rule, value, callback) => {
                 /*let reg = /^([a-zA-Z]|[0-9])(\w|\-)+@[a-zA-Z0-9]+\.([a-zA-Z]{2,4})$/;*/
                 if (value === "") {
                     callback(new Error('请输入邮箱'));
@@ -65,10 +91,10 @@
                 }
             };
             /*验证密码*/
-            var validatePass = (rule, value, callback) => {
-                this.ruleForm.pass = stripscript(value);
-                value = this.ruleForm.pass;
-               /* let reg = /^(?!\D+$)(?! [^a-zA-Z]+$)\S{6,20}$/;*/
+            let validatePass = (rule, value, callback) => {
+                ruleForm.pass = stripscript(value);
+                value = ruleForm.pass;
+                /* let reg = /^(?!\D+$)(?! [^a-zA-Z]+$)\S{6,20}$/;*/
                 if (value === '') {
                     callback(new Error('请输入密码'));
                 } else if (VerifyPass(value)) {
@@ -78,22 +104,22 @@
                 }
             };
             /*确认密码*/
-            var validatePass2 = (rule, value, callback) => {
-                if (this.changeIndex === 0) {
+            let validatePass2 = (rule, value, callback) => {
+                if (changeIndex.value === 0) {
                     callback();
                 }
                 if (value === '') {
                     callback(new Error('请再次输入密码'));
-                } else if (value!==this.ruleForm.pass) {
+                } else if (value !== ruleForm.pass) {
                     callback(new Error('两次输入密码不一致!'));
                 } else {
                     callback();
                 }
             };
             /*验证码*/
-            var validateCode = (rule, value, callback) => {
-                this.ruleForm.code = stripscript(value);
-                value = this.ruleForm.code;
+            let validateCode = (rule, value, callback) => {
+                ruleForm.code = stripscript(value);
+                value = ruleForm.code;
                 if (value === '') {
                     callback(new Error('请输入验证码'));
                 } else if (VerifyCode(value)) {
@@ -102,58 +128,224 @@
                     callback();
                 }
             };
-            return {
-                mag: [
-                    {text: '登录'},
-                    {text: '注册'}
+
+
+            //1.对象/数组用 reactive()定义
+            //声明文本内容
+            const mag = reactive([
+                {text: '登录'},
+                {text: '注册'}
+            ]);
+
+            //声明登录验证码按钮的状态
+            const codeBtnStatus = reactive({
+                status: false,
+                text: '获取验证码'
+            });
+
+            //声明双向交互数据
+            const ruleForm = reactive({
+                userName: '',
+                pass: '',
+                checkPass: '',
+                code: '',
+            });
+            //声明验证规则
+            const rules = reactive({
+                /*邮箱*/
+                userName: [
+                    {validator: validateUserName, trigger: 'blur'}
                 ],
-                changeIndex: 0,
-
-                ruleForm: {
-                    userName: '',
-                    pass: '',
-                    checkPass: '',
-                    code: '',
-                },
-
-                rules: {
-                    /*邮箱*/
-                    userName: [
-                        {validator: validateUserName, trigger: 'blur'}
-                    ],
-                    /*密码*/
-                    pass: [
-                        {validator: validatePass, trigger: 'blur'}
-                    ],
-                    /*确认密码*/
-                    checkPass: [
-                        {validator: validatePass2, trigger: 'blur'}
-                    ],
-                    /*验证码*/
-                    code: [
-                        {validator: validateCode, trigger: 'blur'}
-                    ]
+                /*密码*/
+                pass: [
+                    {validator: validatePass, trigger: 'blur'}
+                ],
+                /*确认密码*/
+                checkPass: [
+                    {validator: validatePass2, trigger: 'blur'}
+                ],
+                /*验证码*/
+                code: [
+                    {validator: validateCode, trigger: 'blur'}
+                ]
+            });
 
 
+            //2.普通数据类型用 ref()定义
+            //判断状态用的变量
+            const changeIndex = ref(0);
+            //登录/注册按钮的状态
+            const loginBtnStatus = ref(true);
+
+            //计时器id 清除用
+            let timeId = ref('');
+
+            //使用 isRef来判断 是否是ref类型
+            /*console.log(isRef(mag)?'是':'否');*/
+
+
+            //3.methods去除,采用普通方式写方法
+            //点击按钮 调用接口获取验证码
+            let getCode = () => {
+                //判断邮箱/密码是否为空或者格式有问题
+                if (!isNullorFormat(ruleForm)) {
+                    return;
                 }
-            }
-        },
-        methods: {
-            isActive(index) {
-                this.changeIndex = index;
-            },
-            /*登录按钮*/
-            submitForm(formName) {
-                this.$refs[formName].validate((valid) => {
+                //判断是否是注册页面
+                if (changeIndex.value) {
+                    if (ruleForm.checkPass == '') {
+                        root.$message.error('请输入确认密码');
+                        return
+                    }
+                    //校验密码是否一致
+                    if (ruleForm.checkPass !== ruleForm.pass) {
+                        root.$message.error('两次输入密码不一致!');
+                        return;
+                    }
+                }
+                //切换验证码转状态
+                codeBtnStatus.text = '请求中';
+                codeBtnStatus.status = true;
+                //定义post 请求的参数
+                let data = {
+                    username: ruleForm.userName,
+                    module: changeIndex.value ? 'register' : 'login'
+                    /*0 false login   1 true register*/
+                };
+                //调用接口,将参数传入
+                postCodeApi(data).then(response => {
+                        //调用接口成功
+                        console.log(response);
+                        //获取接口返回的数据
+                        let resDate = response.data;
+                        //消息栏弹出对应的消息
+                        root.$message({
+                            message: resDate.message,
+                            type: 'success'
+                        });
+                        //启用登录按钮
+                        loginBtnStatus.value = false;
+                        //开启定时器
+                        timer();
+                    }
+                    //调用接口失败
+                ).catch(err => {
+                        console.log(err);
+                        //开启定时器
+                        timer();
+                    }
+                );
+            };
+
+            //切换登录/注册状态
+            const isActive = (index, formName) => {
+                changeIndex.value = index;
+                //重置表单的文本内容
+                refs[formName].resetFields();
+                //清理定时器
+                clearInterval(timeId.value);
+                //初始化验证码/按钮的状态
+                codeBtnStatus.status = false;
+                codeBtnStatus.text = '获取验证码';
+                loginBtnStatus.value = true;
+            };
+
+            //点击提交(登录/注册)按钮
+            const submitForm = (formName) => {
+                //验证表单
+                refs[formName].validate((valid) => {
                     if (valid) {
-                        alert('submit!');
+                        //验证成功,将表单里的数据打包下
+                        let data = {
+                            username: ruleForm.userName,
+                            password: ruleForm.pass,
+                            code: ruleForm.code,
+                        };
+                        //页面调用对应的接口
+                        changeIndex.value?register(data,formName):login(data);
                     } else {
+                        //提交失败
                         console.log('error submit!!');
                         return false;
                     }
                 });
-            },
-        }
+            };
+            //定时器
+            const timer = () => {
+                if (timeId.value) {
+                    clearInterval(timeId.value);
+                }
+                let num = 10;
+                //倒计时
+                timeId.value = setInterval(() => {
+                    num--;
+                    //当倒计时结束时候,清空定时器,调整验证码的状态
+                    if (num === 0) {
+                        clearInterval(timeId.value);
+                        codeBtnStatus.status = false;
+                        codeBtnStatus.text = '重新发送';
+                    } else {
+                        //没结束时候,继续倒计时
+                        codeBtnStatus.text = `倒计时${num}秒`;
+                    }
+                }, 1000);
+            };
+            //调用登录接口
+            const register = (data,formName) => {
+                //将打包的数据传入接口
+                postRegisterApi(data).then(response => {
+                    //调用成功返回对应的数据
+                    console.log(response);
+                    let resData = response.data;
+                    //弹出消息框
+                    root.$message({
+                        message: resData.message,
+                        type: 'success'
+                    });
+                    isActive(0, formName);
+                }).catch(err => {
+                    //调用失败,返回对应的错误
+                    console.log(err);
+                })
+            };
+            //调用注册接口
+            const login = (data) => {
+                //是登录状态,调用登录接口
+                postLoginApi(data).then(response => {
+                        //调用成功返回对应的数据
+                        let resData = response.data;
+                        console.log(response);
+                        //弹出消息框
+                        root.$message({
+                            message: resData.message,
+                            type: 'success'
+                        });
+                    }
+                ).catch(err => {
+                        //调用失败,返回对应的错误
+                        console.log(err);
+                    }
+                )
+            };
+            //将方法,对象,数组return出去才能用
+            return {
+                mag,
+                ruleForm,
+                changeIndex,
+                rules,
+                loginBtnStatus,
+                codeBtnStatus,
+                timeId,
+                register,
+                login,
+                isActive,
+                submitForm,
+                getCode,
+                timer,
+
+            }
+
+        },
 
     }
 </script>

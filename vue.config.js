@@ -58,7 +58,18 @@ module.exports = {
         https: false, // 编译失败时刷新页面
         hot: true, // 开启热加载
         hotOnly: false,
-        proxy: null, // 设置代理
+        proxy: {
+            "/jxwDevAPi": {// 设置代理
+                target: "http://www.web-jshtml.cn",
+                //设置你调用的接口域名和端口号http:
+                //  或者http://www.web-jshtml.cn/api 服务器地址 http://www.web-jshtml.cn/productapi
+
+                changeOrigin: true, //跨域
+                pathRewrite: {
+                    "^/jxwDevAPi": '/productapi'
+                }
+            }
+        },
         overlay: { // 全屏模式下是否显示脚本错误
             warnings: true,
             errors: true
@@ -70,4 +81,4 @@ module.exports = {
      * 第三方插件配置
      */
     pluginOptions: {}
-}
+};
