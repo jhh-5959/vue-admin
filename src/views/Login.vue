@@ -16,14 +16,14 @@
                 <!--验证密码-->
                 <el-form-item prop="pass">
                     <label for="passWord">密码</label>
-                    <el-input id="passWord" type="text" v-model="ruleForm.pass" autocomplete="off" maxlength="20"
+                    <el-input id="passWord" type="password" v-model="ruleForm.pass" autocomplete="off" maxlength="20"
                               minlength="6"></el-input>
                 </el-form-item>
 
                 <!--确认密码-->
                 <el-form-item prop="checkPass" v-show="changeIndex">
                     <label for="checkPassWord">确认密码</label>
-                    <el-input id="checkPassWord" type="text" v-model="ruleForm.checkPass" autocomplete="off"></el-input>
+                    <el-input id="checkPassWord" type="password" v-model="ruleForm.checkPass" autocomplete="off"></el-input>
                 </el-form-item>
 
                 <!--验证码-->
@@ -59,10 +59,10 @@
     import {stripscript, VerifyUserName, VerifyPass, VerifyCode, isNullorFormat} from '@/tools/verification'
     //使用Vue3.0语法需要 按需导入 对应的API
     import {reactive, ref, isRef} from '@vue/composition-api';
-
     //按需调用 login.js 接口文件
     import {postCodeApi, postLoginApi, postRegisterApi} from '@/api/login';
-
+    //加密工具
+    import sha1 from 'sha1';
 
     export default {
         name: "Login",
@@ -136,13 +136,11 @@
                 {text: '登录'},
                 {text: '注册'}
             ]);
-
             //声明登录验证码按钮的状态
             const codeBtnStatus = reactive({
                 status: false,
                 text: '获取验证码'
             });
-
             //声明双向交互数据
             const ruleForm = reactive({
                 userName: '',
@@ -176,10 +174,8 @@
             const changeIndex = ref(0);
             //登录/注册按钮的状态
             const loginBtnStatus = ref(true);
-
             //计时器id 清除用
             let timeId = ref('');
-
             //使用 isRef来判断 是否是ref类型
             /*console.log(isRef(mag)?'是':'否');*/
 
@@ -204,8 +200,7 @@
                     }
                 }
                 //切换验证码转状态
-                codeBtnStatus.text = '请求中';
-                codeBtnStatus.status = true;
+                changeCodeBtnStatus({status:true,text:'请求中'});
                 //定义post 请求的参数
                 let data = {
                     username: ruleForm.userName,
@@ -236,20 +231,6 @@
                     }
                 );
             };
-
-            //切换登录/注册状态
-            const isActive = (index, formName) => {
-                changeIndex.value = index;
-                //重置表单的文本内容
-                refs[formName].resetFields();
-                //清理定时器
-                clearInterval(timeId.value);
-                //初始化验证码/按钮的状态
-                codeBtnStatus.status = false;
-                codeBtnStatus.text = '获取验证码';
-                loginBtnStatus.value = true;
-            };
-
             //点击提交(登录/注册)按钮
             const submitForm = (formName) => {
                 //验证表单
@@ -258,7 +239,7 @@
                         //验证成功,将表单里的数据打包下
                         let data = {
                             username: ruleForm.userName,
-                            password: ruleForm.pass,
+                            password: sha1(ruleForm.pass),
                             code: ruleForm.code,
                         };
                         //页面调用对应的接口
@@ -269,6 +250,54 @@
                         return false;
                     }
                 });
+            };
+            //调用注册接口
+            const register = (data,formName) => {
+                //将打包的数据传入接口
+                postRegisterApi(data).then(response => {
+                    //调用成功返回对应的数据
+                    console.log(response);
+                    let resData = response.data;
+                    //弹出消息框
+                    root.$message({
+                        message: resData.message,
+                        type: 'success'
+                    });
+                    isActive(0, formName);
+                }).catch(err => {
+                    //调用失败,返回对应的错误
+                    console.log(err);
+                })
+            };
+            //调用登录接口
+            const login = data => {
+                //是登录状态,调用登录接口
+                postLoginApi(data).then(response => {
+                        //调用成功返回对应的数据
+                        let resData = response.data;
+                        console.log(response);
+                        //弹出消息框
+                        root.$message({
+                            message: resData.message,
+                            type: 'success'
+                        });
+                    }
+                ).catch(err => {
+                        //调用失败,返回对应的错误
+                        console.log(err);
+                    }
+                )
+            };
+            //切换登录/注册按钮状态
+            const isActive = (index, formName) => {
+                changeIndex.value = index;
+                //重置表单的文本内容
+                refs[formName].resetFields();
+                //清理定时器
+                clearInterval(timeId.value);
+                //初始化验证码/按钮的状态
+                changeCodeBtnStatus({status:false,text:'获取验证码'});
+                loginBtnStatus.value = true;
             };
             //定时器
             const timer = () => {
@@ -290,43 +319,13 @@
                     }
                 }, 1000);
             };
-            //调用登录接口
-            const register = (data,formName) => {
-                //将打包的数据传入接口
-                postRegisterApi(data).then(response => {
-                    //调用成功返回对应的数据
-                    console.log(response);
-                    let resData = response.data;
-                    //弹出消息框
-                    root.$message({
-                        message: resData.message,
-                        type: 'success'
-                    });
-                    isActive(0, formName);
-                }).catch(err => {
-                    //调用失败,返回对应的错误
-                    console.log(err);
-                })
+            //切换验证码按钮状态
+            const changeCodeBtnStatus=(obj)=>{
+                codeBtnStatus.status = obj.status;
+                codeBtnStatus.text =obj.text;
             };
-            //调用注册接口
-            const login = (data) => {
-                //是登录状态,调用登录接口
-                postLoginApi(data).then(response => {
-                        //调用成功返回对应的数据
-                        let resData = response.data;
-                        console.log(response);
-                        //弹出消息框
-                        root.$message({
-                            message: resData.message,
-                            type: 'success'
-                        });
-                    }
-                ).catch(err => {
-                        //调用失败,返回对应的错误
-                        console.log(err);
-                    }
-                )
-            };
+
+
             //将方法,对象,数组return出去才能用
             return {
                 mag,
@@ -336,6 +335,7 @@
                 loginBtnStatus,
                 codeBtnStatus,
                 timeId,
+                changeCodeBtnStatus,
                 register,
                 login,
                 isActive,
@@ -344,7 +344,6 @@
                 timer,
 
             }
-
         },
 
     }
