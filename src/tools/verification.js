@@ -56,7 +56,7 @@ export function VerifyCode (val) {
  * @param obj
  * @returns {boolean}
  */
-export function isNullorFormat(obj,callback) {
+export function isNullorFormat(obj) {
     for (let [key,vla] of Object.entries(obj)){
         if (key==='userName'){
                 if (vla==''){

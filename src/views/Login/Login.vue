@@ -23,7 +23,8 @@
                 <!--确认密码-->
                 <el-form-item prop="checkPass" v-show="changeIndex">
                     <label for="checkPassWord">确认密码</label>
-                    <el-input id="checkPassWord" type="password" v-model="ruleForm.checkPass" autocomplete="off"></el-input>
+                    <el-input id="checkPassWord" type="password" v-model="ruleForm.checkPass"
+                              autocomplete="off"></el-input>
                 </el-form-item>
 
                 <!--验证码-->
@@ -130,6 +131,9 @@
             };
 
 
+            console.log(root.$router);
+            console.log(root.$route);
+
             //1.对象/数组用 reactive()定义
             //声明文本内容
             const mag = reactive([
@@ -200,7 +204,7 @@
                     }
                 }
                 //切换验证码转状态
-                changeCodeBtnStatus({status:true,text:'请求中'});
+                changeCodeBtnStatus({status: true, text: '请求中'});
                 //定义post 请求的参数
                 let data = {
                     username: ruleForm.userName,
@@ -210,7 +214,7 @@
                 //调用接口,将参数传入
                 postCodeApi(data).then(response => {
                         //调用接口成功
-                        console.log(response);
+                        /*console.log(response);*/
                         //获取接口返回的数据
                         let resDate = response.data;
                         //消息栏弹出对应的消息
@@ -243,7 +247,7 @@
                             code: ruleForm.code,
                         };
                         //页面调用对应的接口
-                        changeIndex.value?register(data,formName):login(data);
+                        changeIndex.value ? register(data, formName) : login(data);
                     } else {
                         //提交失败
                         console.log('error submit!!');
@@ -252,7 +256,7 @@
                 });
             };
             //调用注册接口
-            const register = (data,formName) => {
+            const register = (data, formName) => {
                 //将打包的数据传入接口
                 postRegisterApi(data).then(response => {
                     //调用成功返回对应的数据
@@ -272,7 +276,7 @@
             //调用登录接口
             const login = data => {
                 //是登录状态,调用登录接口
-                postLoginApi(data).then(response => {
+                root.$store.dispatch("app/loginApi",data).then(response => {
                         //调用成功返回对应的数据
                         let resData = response.data;
                         console.log(response);
@@ -281,6 +285,8 @@
                             message: resData.message,
                             type: 'success'
                         });
+                        //成功登录路由跳转
+                        root.$router.replace('/initIndex');
                     }
                 ).catch(err => {
                         //调用失败,返回对应的错误
@@ -296,7 +302,7 @@
                 //清理定时器
                 clearInterval(timeId.value);
                 //初始化验证码/按钮的状态
-                changeCodeBtnStatus({status:false,text:'获取验证码'});
+                changeCodeBtnStatus({status: false, text: '获取验证码'});
                 loginBtnStatus.value = true;
             };
             //定时器
@@ -320,9 +326,9 @@
                 }, 1000);
             };
             //切换验证码按钮状态
-            const changeCodeBtnStatus=(obj)=>{
+            const changeCodeBtnStatus = (obj) => {
                 codeBtnStatus.status = obj.status;
-                codeBtnStatus.text =obj.text;
+                codeBtnStatus.text = obj.text;
             };
 
 

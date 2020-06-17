@@ -10,16 +10,30 @@ module.exports = {
      * webpack配置,see https://github.com/vuejs/vue-cli/blob/dev/docs/webpack.md
      **/
     chainWebpack: (config) => {
+        const svgRule = config.module.rule("svg");
+        svgRule.uses.clear();
+        svgRule
+            .use("svg-sprite-loader")
+            .loader("svg-sprite-loader")
+            .options({
+                symbolId: "icon-[name]",
+                include: ["./src/icons"]
+            });
+
     },
     configureWebpack: (config) => {
         config.resolve = { // 配置解析别名
-          extensions: ['.js', '.json', '.vue'],
-          alias: {
-            '@': path.resolve(__dirname, './src'),
-            'public': path.resolve(__dirname, './public'),
-            '@c': path.resolve(__dirname, './src/components'),
-            'views': path.resolve(__dirname, './src/views'),
-          }
+            extensions: ['.js', '.json', '.vue'],
+            alias: {
+                '@': path.resolve(__dirname, './src'),
+                'public': path.resolve(__dirname, './public'),
+                '@c': path.resolve(__dirname, './src/components'),
+                'views': path.resolve(__dirname, './src/views'),
+                'styles': path.resolve(__dirname, './src/styles'),
+                'router':path.resolve(__dirname,'./src/router'),
+                //使vue项目不再 <runtime>模式
+                'vue$': "vue/dist/vue.js"
+            }
         }
     },
     // 生产环境是否生成 sourceMap 文件
@@ -34,7 +48,7 @@ module.exports = {
         loaderOptions: {
 
             // 如发现 css.modules 报错，请查看这里：http://www.web-jshtml.cn/#/detailed?id=12
-            scss: {
+            scss: {
                 /*data: `@import "./src/styles/main.scss";`*///data 已经改为 prependData
                 prependData: `@import "./src/styles/main.scss";`
             }
@@ -60,13 +74,13 @@ module.exports = {
         hotOnly: false,
         proxy: {
             "/jxwDevAPi": {// 设置代理
-                target: "http://www.web-jshtml.cn",
+                target: "http://www.web-jshtml.cn/productapi/token",
                 //设置你调用的接口域名和端口号http:
                 //  或者http://www.web-jshtml.cn/api 服务器地址 http://www.web-jshtml.cn/productapi
 
                 changeOrigin: true, //跨域
                 pathRewrite: {
-                    "^/jxwDevAPi": '/productapi'
+                    "^/jxwDevAPi": ''
                 }
             }
         },

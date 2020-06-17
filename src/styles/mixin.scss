@@ -1,0 +1,9 @@
+@mixin compatibility($key,$vla) {
+  -webkit-#{$key}: $vla;
+  -moz-#{$key}: $vla;
+  -ms-#{$key}: $vla;
+  -o-#{$key}: $vla;
+  #{$key}: $vla;
+
+
+}
