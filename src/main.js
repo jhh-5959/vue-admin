@@ -7,8 +7,11 @@ import router from "./router";
 import store from "./store";
 
 //引入自定义的全局的svg组件
-import "./icons/index";
+import  "./icons/index";
 
+/*//引入自定义的全局的方法
+import dialogFn from "./tools/dialog"
+Vue.use(dialogFn);*/
 
 //引入 路由守卫
 import "router/routerGuard"

@@ -80,3 +80,16 @@ export function isNullorFormat(obj) {
     return true;
 }
 
+
+/**
+ * 验证表单是否为空
+ * @param argument
+ * @returns {boolean}
+ */
+export function isNull(argument,mes) {
+    if (argument===''){
+        Message.error(mes);
+        return false;
+    }
+    return true
+}

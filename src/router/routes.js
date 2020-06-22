@@ -10,8 +10,8 @@ const initIndex=()=>import("../views/InitIndex/InitIndex");
 const console=()=>import("../views/Console/Console");
 const infoClass=()=>import("../views/Info/InfoClass");
 const infoList=()=>import("../views/Info/InfoList");
+const infoDetail=()=>import("../views/Info/infoDetail");
 const userList=()=>import("../views/User/UserLIst");
-
 
 //配置路由
 export const routes = [
@@ -76,7 +76,15 @@ export const routes = [
                 meta: {
                     title: "信息分类"
                 }
+            },
+            {
+                path: "/infoDetail",
+                component: infoDetail,
+                meta: {
+                    title: "信息详情"
+                }
             }
+
         ],
         meta: {
             title: "信息管理",

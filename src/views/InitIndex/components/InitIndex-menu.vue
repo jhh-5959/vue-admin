@@ -145,6 +145,45 @@
         }
 
 
+    }
+
+    .el-menu--vertical {
+
+
+        ::v-deep .el-menu{
+
+        }
+        ::v-deep .el-menu--popup{
+            padding:0!important;
+        }
+        ::v-deep .el-menu--popup-right-start{
+            margin-left:0!important;
+            margin-right:0!important;
+
+        }
+
+        .el-menu-item-group {
+            padding: 0 !important;
+
+            ::v-deep .el-menu-item-group__title {
+                padding: 0 !important;
+            }
+
+            .el-menu-item {
+                line-height: 56px !important;
+                background-color: $mainThree-bgc !important;
+            }
+
+            .el-menu-item:hover {
+                background-color: $mainSecond-bgc !important;
+            }
+
+            .el-menu-item.is-active {
+                color: $main-bgc !important;
+            }
+        }
+
+
 
     }
 

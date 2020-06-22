@@ -2,8 +2,15 @@
 @import "variable";
 @import "mixin";
 @import "myElementStyle";
-ul{
+ul,h4{
   list-style: none;
   padding: 0;
   margin: 0;
+}
+
+.pull-left{
+  float: left;
+}
+.pull-right{
+  float: right;
 }

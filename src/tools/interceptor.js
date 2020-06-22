@@ -2,6 +2,8 @@
 import axios from 'axios';
 //单独引入 Message
 import {Message} from 'element-ui';
+//导入操作cookie方法
+import {getTaken,getUserName} from '@/tools/handleCookie'
 
 //判断 识别开发环境/生产环境,预留空间
 // /api===https://www.web-jshtml.cn/productapi
@@ -15,17 +17,15 @@ const server = axios.create(
 
     }
 );
-
 // 添加请求拦截器
 server.interceptors.request.use(function (config) {
     // 在发送请求之前做些什么
     /*console.log(config);*/
-    config.headers.user = 'jxw';
-    config.headers.id = 'jin';
+    config.headers.Tokey = getTaken();
+    config.headers.UserName = getUserName();
     //添加请求头的 位置 config.headers 添加对应的参数
-    //例如 config.headers.user='xxxx';
-    //例如 config.headers.id='xxxx';
-
+    //例如 config.headers.Tokey='xxxx';
+    //例如 config.headers.UserName='xxxx';
     return config;
 }, function (error) {
     // 对请求错误做些什么
