@@ -1,12 +1,12 @@
 <template>
     <div>
         <el-row :gutter="8">
-            <!--关键-->
+            <!--关键字-->
             <el-col :span="3" class="myEl-col keyword">
                 <label>关键字:</label>
-                <el-select v-model="value3" placeholder="请选择" style="width:101px">
+                <el-select v-model="data.key.keyWordVal" placeholder="请选择" style="width:101px" clearable>
                     <el-option
-                            v-for="item in options2"
+                            v-for="item in data.key.keyWordOptions"
                             :key="item.value"
                             :label="item.label"
                             :value="item.value">
@@ -15,22 +15,7 @@
             </el-col>
             <!--搜索框-->
             <el-col :span="3" class="myEl-col search">
-                <el-select
-                        v-model="SearchValue"
-                        multiple
-                        filterable
-                        remote
-                        reserve-keyword
-                        placeholder="请输入内容"
-                        :remote-method="remoteMethod"
-                        :loading="SearchLoading">
-                    <el-option
-                            v-for="item in SearchOptions"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value">
-                    </el-option>
-                </el-select>
+                <el-input v-model="data.key.searchVal" placeholder="请输入内容" ></el-input>
             </el-col>
             <el-col :span="1" class="myEl-col searchBtn">
                 <el-button type="danger">搜索</el-button>
@@ -44,7 +29,7 @@
         <div class="blank1"></div>
         <!--表格-->
         <el-table
-                :data="tableData"
+                :data="data.key.tableData"
                 :cell-style="rowClass"
                 :header-cell-style="headClass"
                 border
@@ -85,7 +70,7 @@
                     width="110">
                 <template slot-scope="scope">
                     <el-switch
-                            v-model="StatusValue"
+                            v-model="data.key.statusValue"
                             active-color="#13ce66"
                             inactive-color="#ff4949">
                     </el-switch>
@@ -115,12 +100,17 @@
         <!--分页-->
         <el-pagination
                 background
-                layout="prev, pager, next"
-                :total="1000"
-                class="pull-right">
+                @size-change="handleSizeChange"
+                @current-change="handleCurrentChange"
+                :current-page="data.key.currentPage"
+                :page-sizes="data.key.pageSizes"
+                :page-size="data.key.pageSize"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="data.key.total"
+                style="float: right">
         </el-pagination>
         <!--添加弹窗子组件-->
-        <UseraddDialog :ftc.sync="ftcData" /><!--@ctf="ctfFn"-->
+        <UseraddDialog :ftc.sync="data.key.ftcData" /><!--@ctf="ctfFn"-->
     </div>
 </template>
 
@@ -136,79 +126,61 @@
         setup(props, {root}) {
             //声明全局方法
             const {DelFn} = mydialgFn();
-            //Select选择器(关键字)
-            const options2 = reactive([{
-                value: 1,
-                label: '手机号'
-            }, {
-                value: 2,
-                label: '姓名'
-            }]);
-            const value3 = ref('');
-            //搜索栏
-            const SearchOptions = reactive([]);
-            const SearchValue = reactive([]);
-            const SearchList = reactive([]);
-            const SearchLoading = ref(false);
-            const SearchStates = reactive(["Alabama", "Alaska", "Arizona",
-                "Arkansas", "California", "Colorado",
-                "Connecticut", "Delaware", "Florida",
-                "Georgia", "Hawaii", "Idaho", "Illinois",
-                "Indiana", "Iowa", "Kansas", "Kentucky",
-                "Louisiana", "Maine", "Maryland",
-                "Massachusetts", "Michigan", "Minnesota",
-                "Mississippi", "Missouri", "Montana",
-                "Nebraska", "Nevada", "New Hampshire",
-                "New Jersey", "New Mexico", "New York",
-                "North Carolina", "North Dakota", "Ohio",
-                "Oklahoma", "Oregon", "Pennsylvania",
-                "Rhode Island", "South Carolina",
-                "South Dakota", "Tennessee", "Texas",
-                "Utah", "Vermont", "Virginia",
-                "Washington", "West Virginia", "Wisconsin",
-                "Wyoming"]);
-            const remoteMethod = (query) => {
-                if (query !== '') {
-                    root.SearchLoading = true;
-                    setTimeout(() => {
-                        root.SearchLoading = false;
-                        root.SearchOptions = root.SearchList.filter(item => {
-                            return item.label.toLowerCase()
-                                .indexOf(query.toLowerCase()) > -1;
-                        });
-                    }, 200);
-                } else {
-                    root.SearchOptions = [];
-                }
-            };
-            //表格
-            const tableData = reactive([{
-                userName: '409019683@qq.com',
-                name: '张三',
-                tel: 13588888888,
-                address: '广东省 深圳市 南山区',
-                role:'超管'
-            },{
-                userName: '409019683@qq.com',
-                name: '张三',
-                tel: 13588888888,
-                address: '广东省 深圳市 南山区',
-                role:'信息管理'
-            },{
-                userName: '409019683@qq.com',
-                name: '张三',
-                tel: 13588888888,
-                address: '广东省 深圳市 南山区',
-                role:'用户管理'
-            },{
-                userName: '409019683@qq.com',
-                name: '张三',
-                tel: 13588888888,
-                address: '广东省 深圳市 南山区',
-                role:'信息管理'
-            }, ]);
+            //所有数据
+            const data=reactive({key:{
+                //Select选择器(关键字)
+                   keyWordOptions: [{
+                       value: 1,
+                       label: '手机号'
+                   }, {
+                       value: 2,
+                       label: '姓名'
+                   }],
+                    keyWordVal:'',
+                    //搜索
+                    searchVal:'',
+                    //表格
+                    tableData:[{
+                        userName: '409019683@qq.com',
+                        name: '张三',
+                        tel: 13588888888,
+                        address: '广东省 深圳市 南山区',
+                        role:'超管'
+                    },{
+                        userName: '409019683@qq.com',
+                        name: '张三',
+                        tel: 13588888888,
+                        address: '广东省 深圳市 南山区',
+                        role:'信息管理'
+                    },{
+                        userName: '409019683@qq.com',
+                        name: '张三',
+                        tel: 13588888888,
+                        address: '广东省 深圳市 南山区',
+                        role:'用户管理'
+                    },{
+                        userName: '409019683@qq.com',
+                        name: '张三',
+                        tel: 13588888888,
+                        address: '广东省 深圳市 南山区',
+                        role:'信息管理'
+                    }],
+                    //分页
+                    currentPage:1,
+                    pageSizes:[10, 20, 30, 40],
+                    pageSize:10,
+                    total:100,
+                    //新增按钮开关
+                    ftcData:false,
+                    //权限状态
+                    statusValue:true,
+                    //选择框
+                    multipleSelection:[]
+
+                }});
+            //表格中方法
             const handleSelectionChange = (val) => {
-                root.multipleSelection = val;
+                data.key.multipleSelection = val;
             };
             const handleEdit = (index, row) => {
                 console.log(index, row);
@@ -232,11 +204,9 @@
             const rowClass = () => {
                 return 'text-align: center;'
             };
-
             //新增按钮
-            const ftcData = ref(false);
             const open = () => {
-                ftcData.value=true;
+                data.key.ftcData=true;
             };
             //全部删除方法
             const AllDelFn=()=>{
@@ -249,40 +219,35 @@
                     console.log(123);
                 });
             };
-            //权限状态
-            const StatusValue=ref(true);
             /*//子组件给父组件传值所调用的方法
             const ctfFn=(val)=>{
                 ftcData.value=val;
             };*/
-
-
-
+            //分页
+            const handleSizeChange=(val)=>{
+                console.log(`每页 ${val} 条`);
+            };
+            const handleCurrentChange=(val)=> {
+                console.log(`当前页: ${val}`);
+            };
             return {
-                //Select选择器(关键字)
-                options2, value3,
-                //搜索栏
-                SearchOptions, SearchValue, SearchList, SearchLoading, SearchStates, remoteMethod,
+                data,
                 //表格
-                tableData, handleSelectionChange, handleEdit, handleDelete, headClass, rowClass,
+                handleSelectionChange, handleEdit, handleDelete, headClass, rowClass,
                 //添加按钮
-                ftcData, open,
+                open,
                 //全部删除按钮
                 AllDelFn,
-                //权限状态
-                StatusValue,
                 /*//子组件给父组件传值
                 ctfFn*/
+                //分页
+                handleSizeChange,handleCurrentChange
             }
         },
         components: {
             UseraddDialog
         },
-        onMounted({root}) {
-            root.SearchList = root.SearchStates.map(item => {
-                console.log(123);
-                return {value: `value:${item}`, label: `label:${item}`};
-            })
+        onMounted() {
         },
     }
 </script>

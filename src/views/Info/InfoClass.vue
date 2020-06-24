@@ -14,8 +14,9 @@
             <el-col :span="8">
                 <div class="leftBox" v-for="firstClass in classData.key" :key="firstClass.id">
                     <h4>{{ firstClass.category_name }}</h4>
-                    <div class="iconBtn" @click.prevent="ck">
-                        <iconSvg class-name="add" icon-class="add" class="iconClass"></iconSvg>
+                    <div class="iconBtn" @click.prevent="ckIcon(firstClass)">
+                        <iconSvg class-name="add" icon-class="add" class="iconClass" v-if="firstClass.isShow"></iconSvg>
+                        <iconSvg class-name="subtract" icon-class="subtract" class="iconClass" v-if="!firstClass.isShow"></iconSvg>
                     </div>
                     <!--修改层-->
                     <div class="LevelOne">
@@ -24,7 +25,9 @@
                                 <el-button round type="danger" class="editBtn"
                                            @click.prevent="editClass(firstClass.id,firstClass.category_name)">编辑
                                 </el-button>
-                                <el-button round type="success" class="addChildrenBtn" @click.prevent="">添加子级
+                                <el-button round type="success" class="addChildrenBtn"
+                                           @click.prevent="addChildClass(firstClass.id,firstClass.category_name)">
+                                    添加子级
                                 </el-button>
                                 <el-button round class="delBtn" @click.prevent="delClass(firstClass.id)">删除</el-button>
                             </div>
@@ -32,13 +35,21 @@
                     </div>
                     <!--二级分类-->
                     <ul v-if="firstClass.children">
-                        <li v-for="secondClass in firstClass.children " :key="secondClass.id">{{
+                        <li
+                            v-show="!firstClass.isShow"
+                            :pId="secondClass.parent_id"
+                            v-for="secondClass in firstClass.children "
+                            :key="secondClass.id">{{
                             secondClass.category_name}}
                             <!--修改层-->
                             <div class="shade isHover">
                                 <div class="pull-right">
-                                    <el-button round type="danger" class="editBtn">编辑</el-button>
-                                    <el-button round class="delBtn" @click.prevent="delClass">删除</el-button>
+                                    <el-button round type="danger" class="editBtn"
+                                               @click.prevent="editChildClass(secondClass.id,secondClass.category_name,firstClass.category_name)">
+                                        编辑
+                                    </el-button>
+                                    <el-button round class="delBtn" @click.prevent="delClass(secondClass.id)">删除
+                                    </el-button>
                                 </div>
                             </div>
                         </li>
@@ -49,15 +60,15 @@
             <el-col :span="16">
                 <div class="rightBox">
                     <h4>一级分类编辑</h4>
-                    <div class="dv" v-if="firstIsShow">
+                    <div class="dv" v-if="data.key.firstIsShow">
                         <label>一级分类名称：</label>
                         <el-input v-model="list.firstClass" placeholder="请输入内容"
-                                  :disabled="status.firstClass"></el-input>
+                                  :disabled="status.firstClass" clearable></el-input>
                     </div>
-                    <div class="dv" v-if="secondIsShow">
+                    <div class="dv" v-if="data.key.secondIsShow">
                         <label>二级分类名称：</label>
                         <el-input v-model="list.secondClass" placeholder="请输入内容"
-                                  :disabled="status.secondClass"></el-input>
+                                  :disabled="status.secondClass" clearable></el-input>
                     </div>
                     <el-button type="danger" class="sureBtn" @click="mySumit" :loading="status.btnLoading"
                                :disabled="status.btnDisabled">确定
@@ -75,7 +86,7 @@
     //引入全局公用接口方法
     import {commonApi} from "../../api/commonApi";
     //引入use接口
-    import {addFirstCategory, getCategoryAll, deleteCategory, editCategory} from "@/api/new"
+    import {addFirstCategory, deleteCategory, editCategory, addChildrenCategory} from "@/api/new"
 
     export default {
         name: "InfoClas",
@@ -84,26 +95,28 @@
             const {DelFn} = mydialgFn();
             //调用公用接口
             const {readerCategory, readerData} = commonApi();
+            //部分数据
+            const data = reactive({
+                key: {
+                    //判断一级/二级分类名称隐藏/显示
+                    firstIsShow: true,
+                    secondIsShow: true,
+                    //设置确定的类型对应不同的接口
+                    type: '',
+                    //存储当前被选中的数据
+                    clickNowDate: {
+                        id: '',
+                        category_name: '',
+                    },
+                    liIsShow:true,
 
-            //测试点击事件
-            const ck = () => {
-                console.log(123);
-            };
+                }
+            });
             //编辑的表单数据
             const list = reactive({
-                firstClass: '',
-                secondClass: ''
+                    firstClass: '',
+                    secondClass: ''
             });
-            //判断一级/二级分类名称隐藏/显示
-            const firstIsShow = ref(true);
-            const secondIsShow = ref(true);
-            //是否显示&&打开一级分类状态
-            const isShow = () => {
-                secondIsShow.value = !secondIsShow.value;
-                status.firstClass = false;
-                status.btnDisabled = false;
-                type.value = '添加一级分类'
-            };
             //表单控件的状态
             const status = reactive({
                 btnLoading: false,
@@ -111,37 +124,53 @@
                 firstClass: true,
                 secondClass: true,
             });
-            //设置确定的类型对应不同的接口
-            const type = ref('');
-            //存储当前被选中的数据
-            const clickNowDate = reactive({
-                id: '',
-                category_name: '',
-            });
+            //点击icon图标事件
+            const ckIcon = (item) => {
+                //当前对象中不存在isShow属性
+                if (!item.isShow){
+                    //用$set 添加这个属性设置值为false
+                    root.$set(item,'isShow',false);
+                    //切换isShow这个属性值
+                    item.isShow=!item.isShow;
+                }else{
+                    //当前对象中存在isShow属性
+                    //切换isShow这个属性值
+                    item.isShow=!item.isShow;
+                }
+            };
             //信息分类动态数据
             const classData = reactive({key: []});
-
-            /*//调用渲染信息分类数据的接口(未封装成公用方法之前)
-            const readerCategory = () => {
-                //调用接口
-                getCategoryAll({}).then(response => {
-                    let data = response.data;
-                    /!* console.log(data);*!/
-                    //渲染信息分类
-                    classData.key = data.data;
-                    /!* console.log(classData.key);*!/
-                }).catch(err => {
-                        console.log(err);
-                    }
-                );
-            };*/
             //生命周期函数----挂载完成
             onMounted(() => {
                 /*方式一: 调用vue3.0全局方法*/
                 readerCategory();
             });
+            //监听一级分类接口的数据
+            watch([
+                    () => list.firstClass,
+                    () => readerData.key,
+                ],
+                ([val1,val2]) => {
+                    data.key.clickNowDate.category_name = val1;
+                    classData.key = val2;
+                });
+            watch([
+                    () => list.secondClass,
+                ],
+                ([val1]) => {
+                    data.key.clickNowDate.category_name = val1;
+                });
 
-            //添加一级分类+调用接口
+            //点击添加一级分类按钮
+            const isShow = () => {
+                //清空输入框
+                clearFrom();
+                data.key.secondIsShow = false;
+                status.firstClass = false;
+                status.btnDisabled = false;
+                data.key.type = '添加一级分类'
+            };
+            //调用点击添加一级分类接口
             const addClass = () => {
                 //调用 添加一级分类的接口
                 //请求的数据
@@ -162,7 +191,7 @@
                         classData.key.push(data.data);
                     }
                     //清空输入框
-                    list.firstClass = '';
+                    clearFrom();
                     //加载结束
                     status.btnLoading = false;
                 }).catch(err => {
@@ -171,7 +200,7 @@
                     status.btnLoading = false;
                 })
             };
-            //删除一级分类+调用接口
+            //点击删除一级分类按钮+调用接口
             const delClass = (id) => {
                 DelFn('确定删除此分类?', '提示', {
                     confirmButtonText: '确定',
@@ -190,53 +219,91 @@
                         });
                         /*//刷新页面
                         root.$router.go(0);*/
-                        let inx = classData.key.findIndex((val) => val.id == id);
-                        classData.key.splice(inx, 1);
-
+                        /*let inx = classData.key.findIndex((val) => val.id == id);
+                        classData.key.splice(inx, 1);*/
+                        readerCategory();
+                        clearFrom();
                     });
 
                 }, function () {
                     root.$message('已经取消删除');
                 });
             };
-            //编辑一级分类
+            //点击编辑一级分类按钮
             const editClass = (id, name) => {
                 list.firstClass = name;
+                data.key.secondIsShow = false;
                 status.firstClass = false;
+                status.secondClass = true;
                 status.btnDisabled = false;
-                type.value = '编辑一级分类';
-                clickNowDate.id = id;
+                data.key.type = '编辑一级分类';
+                data.key.clickNowDate.id = id;
+                data.key.clickNowDate.category_name = list.firstClass;
             };
-            //监听一级分类接口的数据
-            watch([
-                    () => list.firstClass,
-                    () => readerData.key
-                ],
-                ([val1, val2]) => {
-                    clickNowDate.category_name = val1;
-                    classData.key=val2;
-                });
-            //调用编辑一级分类接口
+            //调用编辑分类接口
             const editFirstClass = () => {
                 let req = {
-                    id: clickNowDate.id,
-                    categoryName: clickNowDate.category_name,
+                    id: data.key.clickNowDate.id,
+                    categoryName: data.key.clickNowDate.category_name,
                 };
-                console.log(req);
+                /* console.log(req);*/
                 editCategory(req).then(res => {
                     let resData = res.data;
-                    console.log(resData);
+                    /* console.log(resData);*/
                     root.$message({
                         message: resData.message,
                         type: 'success'
                     });
-                    /*过滤渲染数中id相等的的值,然后将源数据的标题重新修改*/
-                    let filterdata = classData.key.filter(val => clickNowDate.id == val.id);
-                    filterdata[0].category_name = resData.data.data.categoryName;
-                    list.firstClass = '';
+                    /* /!*过滤渲染数中id相等的的值,然后将源数据的标题重新修改*!/
+                     let filterdata = classData.key.filter(val => data.key.clickNowDate.id == val.id);
+                     filterdata[0].category_name = resData.data.data.categoryName;*/
+                    readerCategory();
+                    clearFrom();
                 }).catch(err => {
                     console.log(err);
                 })
+            };
+            //点击添加二级分类按钮
+            const addChildClass = (id, name) => {
+                //清空输入框
+                list.secondClass = '';
+                list.firstClass = name;
+                data.key.secondIsShow = true;
+                status.firstClass = true;
+                status.secondClass = false;
+                status.btnDisabled = false;
+                data.key.type = '添加二级分类';
+                data.key.clickNowDate.id = id;
+            };
+            //调用添加二级分类接口
+            const addChildClassApi = () => {
+                let reqData = {
+                    categoryName: list.secondClass,
+                    parentId: data.key.clickNowDate.id,
+                };
+                addChildrenCategory(reqData).then(res => {
+                    /* console.log(res);*/
+                    root.$message({
+                        message: res.data.message,
+                        type: 'success'
+                    });
+                    readerCategory();
+                    list.secondClass = '';
+                }).catch(err => {
+                    console.log(err);
+                });
+            };
+            //点击编辑二级分类按钮
+            const editChildClass = (id, childName, fatherName) => {
+                list.firstClass = fatherName;
+                list.secondClass = childName;
+                data.key.secondIsShow = true;
+                status.firstClass = true;
+                status.secondClass = false;
+                status.btnDisabled = false;
+                data.key.type = '编辑二级分类';
+                data.key.clickNowDate.id = id;
+                data.key.clickNowDate.category_name = list.secondClass;
             };
             //点击确定按钮
             const mySumit = () => {
@@ -245,17 +312,46 @@
                     root.$message.error('一级分类不能为空');
                     return
                 }
-                if (type.value.includes('添加一级分类')) {
+                if (data.key.type.includes('添加一级分类')) {
                     addClass();
-                } else if (type.value.includes('编辑一级分类')) {
+                } else if (data.key.type.includes('编辑一级分类')) {
+                    editFirstClass();
+                } else if (data.key.type.includes('添加二级分类')) {
+                    //判断是否为空,
+                    if (!list.secondClass) {
+                        root.$message.error('二级分类不能为空');
+                        return
+                    }
+                    addChildClassApi();
+                } else if (data.key.type.includes('编辑二级分类')) {
+                    //判断是否为空,
+                    if (!list.secondClass) {
+                        root.$message.error('二级分类不能为空');
+                        return
+                    }
                     editFirstClass();
                 }
+
             };
-
-
+            //清空表单
+            const clearFrom = () => {
+                list.firstClass = '';
+                list.secondClass = '';
+            };
+            //重置状态
+            const resetStatus = () => {
+                status.btnLoading = false;
+                status.btnDisabled = true;
+                status.firstClas = true;
+                status.secondClas = true;
+                clearFrom();
+            };
             return {
-                list, firstIsShow, secondIsShow, classData, status, type, clickNowDate,
-                isShow, ck, readerCategory, editClass, delClass, addClass, editFirstClass, mySumit
+                data,
+                classData, list, status,
+                isShow, ckIcon, mySumit, resetStatus, clearFrom,
+                editClass, delClass, addClass, editFirstClass,
+                addChildClass, addChildClassApi, editChildClass
             }
         }
 

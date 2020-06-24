@@ -22,7 +22,14 @@ export function addFirstCategory(data) {
 }
 
 /*添加二级分类*/
-
+/*	/news/addChildrenCategory/ */
+export function addChildrenCategory(data) {
+    return server.request({
+        method:'post',
+        url:'/news/addChildrenCategory/',
+        data
+    });
+}
 
 /*删除一级分类*/
 export function deleteCategory(data) {
@@ -71,4 +78,11 @@ export function deleteInfo(data) {
         data
     });
 }
-
+/*编辑信息*/
+export function editInfo(data) {
+    return server.request({
+        method:'post',
+        url:'/news/editInfo/',
+        data
+    })
+}

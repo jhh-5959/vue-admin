@@ -87,9 +87,11 @@ export function isNullorFormat(obj) {
  * @returns {boolean}
  */
 export function isNull(argument,mes) {
-    if (argument===''){
+    if (argument===''||argument.length===0){
         Message.error(mes);
         return false;
     }
     return true
 }
+
+

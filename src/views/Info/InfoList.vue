@@ -5,7 +5,7 @@
             <!--类别-->
             <el-col :span="4" class="myEl-col type">
                 <label>类别:</label>
-                <el-select v-model="typeSelectVal" placeholder="请选择" style="width: 160px">
+                <el-select v-model="typeSelectVal" placeholder="请选择" style="width: 160px" clearable>
                     <el-option
                             v-for="item in typeData.key"
                             :key="item.id"
@@ -19,14 +19,17 @@
                 <label>日期:</label>
                 <el-date-picker
                         v-model="dateVal"
-                        type="daterange"
+                        type="datetimerange"
                         align="right"
                         unlink-panels
                         range-separator="至"
                         start-placeholder="开始日期"
                         end-placeholder="结束日期"
                         :picker-options="pickerOptions"
-                        style="width: 400px">
+                        style="width: 400px"
+                        format="yyyy-MM-dd HH:mm:ss"
+                        value-format="yyyy-MM-dd HH-mm-ss"
+                >
                 </el-date-picker>
             </el-col>
             <!--关键字-->
@@ -43,25 +46,10 @@
             </el-col>
             <!--搜索-->
             <el-col :span="3" class="myEl-col search">
-                <el-select
-                        v-model="SearchValue"
-                        multiple
-                        filterable
-                        remote
-                        reserve-keyword
-                        placeholder="请输入关键词"
-                        :remote-method="remoteMethod"
-                        :loading="SearchLoading">
-                    <el-option
-                            v-for="item in SearchOptions"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value">
-                    </el-option>
-                </el-select>
+                <el-input v-model="searchVal" placeholder="请输入内容"></el-input>
             </el-col>
             <el-col :span="1" class="myEl-col searchBtn">
-                <el-button type="danger">搜索</el-button>
+                <el-button type="danger" @click="readerTable">搜索</el-button>
             </el-col>
             <!--添加按钮-->
             <el-col :span="5" class="myEl-col addBtn">
@@ -72,6 +60,7 @@
         <div class="blank1"></div>
         <!--表格-->
         <el-table
+                v-loading="loading"
                 :data="tableData.key"
                 :cell-style="rowClass"
                 :header-cell-style="headClass"
@@ -90,12 +79,14 @@
             <el-table-column
                     prop="categoryId"
                     label="类别"
-                    width="130">
+                    width="130"
+                    :formatter="toType">
             </el-table-column>
             <el-table-column
                     prop="createDate"
                     label="日期"
-                    width="237">
+                    width="237"
+                    :formatter="toDate">
             </el-table-column>
             <el-table-column
                     prop="name"
@@ -137,7 +128,10 @@
                 background>
         </el-pagination>
         <!--添加弹窗子组件-->
-        <addDialog :ftc.sync="ftcData" :ftcType="typeData.key" :ftcTitle="titleData"/><!--@ctf="ctfDataFn"-->
+        <addDialog :ftc.sync="ftcData"
+                   :ftcType="typeData.key"
+                   :ftcTitle="titleData"
+                   :ftcForm="formDate.key"/><!--@ctf="ctfDataFn"-->
     </div>
 </template>
 
@@ -149,7 +143,9 @@
     //引入vue3.0的全局方法
     import {mydialgFn} from "../../tools/dialog"
     //引入接口
-    import {getList,deleteInfo} from "../../api/new";
+    import {getList, deleteInfo} from "../../api/new";
+    import {isNull} from "../../tools/verification";
+    import {timestampToTime} from "../../tools/comm";
 
     export default {
         name: "Info",
@@ -164,7 +160,7 @@
             const getType = () => {
                 root.$store.dispatch('comm/readerClass').then(res => {
                     typeData.key = res;
-                    /* console.log(typeData.key);*/
+                    /*console.log(typeData.key);*/
                 }).catch(err => {
                     console.log(err);
                 })
@@ -178,7 +174,7 @@
                 value: 2,
                 label: '标题'
             }]);
-            const keyWordVal = ref(1);
+            const keyWordVal = ref(2);
 
             //日期
             const pickerOptions = reactive({
@@ -208,96 +204,152 @@
                     }
                 }]
             });
-            const dateVal = reactive([]);
+            const dateVal = ref([]);
 
             //搜索栏
-            const SearchOptions = reactive([]);
-            const SearchValue = reactive([]);
-            const SearchList = reactive([]);
-            const SearchLoading = ref(false);
-            const SearchStates = reactive(["Alabama", "Alaska", "Arizona",
-                "Arkansas", "California", "Colorado",
-                "Connecticut", "Delaware", "Florida",
-                "Georgia", "Hawaii", "Idaho", "Illinois",
-                "Indiana", "Iowa", "Kansas", "Kentucky",
-                "Louisiana", "Maine", "Maryland",
-                "Massachusetts", "Michigan", "Minnesota",
-                "Mississippi", "Missouri", "Montana",
-                "Nebraska", "Nevada", "New Hampshire",
-                "New Jersey", "New Mexico", "New York",
-                "North Carolina", "North Dakota", "Ohio",
-                "Oklahoma", "Oregon", "Pennsylvania",
-                "Rhode Island", "South Carolina",
-                "South Dakota", "Tennessee", "Texas",
-                "Utah", "Vermont", "Virginia",
-                "Washington", "West Virginia", "Wisconsin",
-                "Wyoming"]);
-            const remoteMethod = (query) => {
-                if (query !== '') {
-                    root.SearchLoading = true;
-                    setTimeout(() => {
-                        root.SearchLoading = false;
-                        root.SearchOptions = root.SearchList.filter(item => {
-                            return item.label.toLowerCase()
-                                .indexOf(query.toLowerCase()) > -1;
-                        });
-                    }, 200);
-                } else {
-                    root.SearchOptions = [];
+            const searchVal = ref('');
+            const searchInfo = () => {
+                let req = {
+                    pageNumber: currentPage.value,
+                    pageSize: pageSize.value,
+                };
+                /*类别*/
+                if (typeSelectVal.value) {
+                    req.categoryId = Number(typeSelectVal.value)
                 }
+                /*日期*/
+                if (dateVal.value.length > 0) {
+                    req.startTiem = dateVal.value[0];
+                    req.endTime = dateVal.value[1];
+                }
+                /*搜索关键字*/
+                if (searchVal.value) {
+                    req.title = searchVal.value
+                }
+                return req;
             };
 
             //表格
+            const loading = ref(false);
             const tableData = reactive({key: []});
-            const  multipleSelection=reactive({key:[]});
+            const multipleSelection = reactive({key: []});
             const handleSelectionChange = (val) => {
                 multipleSelection.key = val;
             };
-            //----编辑按钮
-            const titleData=ref('');
-            const handleEdit = (index, row) => {
-                console.log(index, row);
-                titleData.value='编辑:';
-                ftcData.value = true;
+            const idArray = reactive([]);
+            //---配合 :formatter 属性 转化格式的方法
+            const toDate = (row) => {
+                return timestampToTime(row.createDate)
             };
+            const toType = (row) => {
+                /*console.log(row.categoryId);
+                console.log(typeData.key);*/
+                let name = typeData.key.filter(value => value.id === row.categoryId)[0].category_name;
+                return name;
+            };
+            //----编辑按钮
+            const formDate=reactive({key:{}});
+            const titleData = ref('');
+            const handleEdit = (index, row) => {
+                /*console.log(index, row);*/
+                titleData.value = '编辑:';
+                ftcData.value = true;
+                formDate.key=row;
+            };
+            //----单个删除按钮
             const handleDelete = (index, row) => {
-                console.log(index, row);
-
+                /* console.log(index, row);*/
                 //单个删除方法
                 DelFn('确定删除此消息', '提示', {
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
                     type: 'warning',
                     center: true
-                },function () {
-
-                    console.log('成功删除');
-                },function () {
-                    console.log('取消删除');
+                }, function () {
+                    //验证是否选中
+                    if (!isNull(multipleSelection.key, '未选中当前行')) {
+                        return
+                    }
+                    if (row.id !== multipleSelection.key[0].id || multipleSelection.key.length !== 1) {
+                        root.$message.error('未选中当前对应的行');
+                        return;
+                    }
+                    //将选择中的id 加入到 数组中
+                    idArray.push(row.id);
+                    let req = {
+                        id: idArray
+                    };
+                    //调用删除接口
+                    delInfoApi(req);
+                }, function () {
                     root.$message({
-                        type:"success",
-                        message:'取消删除'
+                        type: "success",
+                        message: '取消删除'
                     })
+                });
+            };
+            //批量删除按钮
+            const AllDelFn = () => {
+                if (!isNull(multipleSelection.key, '未选中行')) {
+                    return
+                }
+                DelFn('确定要删除选中行', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning',
+                    center: true
+                }, function () {
+                    //将选择中的id 加入到 数组中
+                    multipleSelection.key.forEach(value => {
+                        idArray.push(value.id);
+                    });
+                    let req = {
+                        id: idArray
+                    };
+                    delInfoApi(req);
+                }, function () {
+                    root.$message({
+                        type: "success",
+                        message: '取消删除'
+                    })
+                });
+            };
+            //调用删除信息的接口
+            const delInfoApi = (req) => {
+                deleteInfo(req).then(res => {
+                    let resData = res.data;
+                    /* console.log(resData.data.data);*/
+                    root.$message({
+                        type: 'success',
+                        message: resData.message
+                    });
+                    /*  console.log(tableData.key);*/
+
+                    //过滤单个id
+                    /* tableData.key=tableData.key.filter((val)=>val.id!=resData.data.data[0]);*/
+
+                    //不调用接口渲染页面(filter+some)
+                    /*tableData.key=tableData.key.filter(filterVal=>!resData.data.data.some(someVal=>someVal===filterVal.id));
+                    idArray.length=0;*/
+
+                    //用接口渲染页面
+                    readerTable();
+                }).catch(err => {
+                    root.$message.error('删除失败');
                 });
             };
             //调用接口渲染表格数据
             const readerTable = () => {
-                let req = {
-                    categoryId: '',/*typeData.key['id']*/
-                    startTiem: '', /*dateVal[0]*/
-                    endTime: '',/*dateVal[1]*/
-                    title: '',/*typeData.key['category_name']*/
-                    id: '',/*keyWordVal*/
-                    pageNumber: currentPage.value,
-                    pageSize: pageSize.value,
-                };
+                let req = searchInfo();
+                loading.value = true;
                 getList(req).then(res => {
-                    console.log(res.data.data);
+                    /*console.log(res.data.data);*/
                     let data = res.data.data;
                     tableData.key = data.data;
                     total.value = data.total;
-
+                    loading.value = false;
                 }).catch(err => {
+                    loading.value = false;
                     console.log(err);
                 })
             };
@@ -313,23 +365,12 @@
             //添加按钮
             const ftcData = ref(false);
             const open = () => {
-                titleData.value='新增:';
+                titleData.value = '新增:';
                 ftcData.value = true;
             };
             /*const ctfDataFn=(ctfData)=>{
                 ftcData.value=ctfData;
             };*/
-            //全部删除方法
-            const AllDelFn = () => {
-                DelFn('确定要全部删除', '提示', {
-                    confirmButtonText: '确定',
-                    cancelButtonText: '取消',
-                    type: 'warning',
-                    center: true
-                }, function () {
-                    console.log(123);
-                });
-            };
 
             //分页数据
             const total = ref(40);
@@ -352,6 +393,7 @@
                 readerTable();
 
             });
+
             //监听分页的改变渲染页面
             watch([
                 () => currentPage.value,
@@ -359,21 +401,47 @@
             ], ([val1, val2]) => {
                 readerTable();
             });
+
             return {
                 //Select选择器(类型+关键字)
-                getType, typeData, typeSelectVal, keyWordOptions, keyWordVal,
+                getType,
+                typeData,
+                typeSelectVal,
+                keyWordOptions,
+                keyWordVal,
                 //日期
-                pickerOptions, dateVal,
+                pickerOptions,
+                dateVal,
                 //搜索栏
-                SearchOptions, SearchValue, SearchList, SearchLoading, SearchStates, remoteMethod,
+                searchInfo,
+                searchVal,
                 //表格
-                multipleSelection,tableData, handleSelectionChange, handleEdit, handleDelete, headClass, rowClass, readerTable,titleData,
+                multipleSelection,
+                tableData,
+                idArray,
+                titleData,
+                loading,
+                formDate,
+                handleSelectionChange,
+                handleEdit,
+                handleDelete,
+                delInfoApi,
+                headClass,
+                rowClass,
+                readerTable,
+                toDate,
+                toType,
                 //添加按钮
-                ftcData, open, /*ctfDataFn*/
+                ftcData,
+                open, /*ctfDataFn*/
                 //全部删除按钮
                 AllDelFn,
                 //分页
-                handleSizeChange, handleCurrentChange, total, currentPage, pageSize
+                handleSizeChange,
+                handleCurrentChange,
+                total,
+                currentPage,
+                pageSize,
             }
         },
         components: {
