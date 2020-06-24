@@ -96,7 +96,7 @@
             </el-table-column>
             <el-table-column
                     label="操作"
-                    width="186">
+                    width="300">
                 <template slot-scope="scope">
                     <el-button
                             size="mini"
@@ -107,6 +107,11 @@
                             size="mini"
                             type="success"
                             @click="handleEdit(scope.$index, scope.row)">编辑
+                    </el-button>
+                    <el-button
+                            size="mini"
+                            type="success"
+                            @click="handleEdit(scope.$index, scope.row)">编辑详情
                     </el-button>
                 </template>
             </el-table-column>
