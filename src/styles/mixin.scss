@@ -1,0 +1,24 @@
+//设置兼容性
+@mixin compatibility($key,$vla) {
+  -webkit-#{$key}: $vla;
+  -moz-#{$key}: $vla;
+  -ms-#{$key}: $vla;
+  -o-#{$key}: $vla;
+  #{$key}: $vla;
+}
+
+//header中的label布局函数
+
+@mixin labelLayout($width,$lineHeight,$align:left){
+  label{
+    float: left;
+    width: $width+px;
+    line-height: $lineHeight+px;
+    text-align: $align;
+    font-size: 15px;
+  }
+
+
+
+}
+
