@@ -1,5 +1,6 @@
 import { getCategoryAll } from "./new"
 import {reactive} from "@vue/composition-api";
+import server from '@/tools/interceptor';
 //创建公共方法 方式1: vue3.0
 export function commonApi() {
     //声明一个变量存放数据
@@ -22,4 +23,13 @@ export function commonApi() {
         readerCategory,
         readerData
     }
+}
+
+/*获取七牛云toKen*/
+export function uploadImgToken(data) {
+    return server.request({
+        url:'/uploadImgToken/',
+        method:'post',
+        data
+    });
 }
