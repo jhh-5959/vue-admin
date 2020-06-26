@@ -9,16 +9,21 @@
 
 //header中的label布局函数
 
-@mixin labelLayout($width,$lineHeight,$align:left){
-  label{
+@mixin labelLayout($width,$lineHeight,$align:left) {
+  label {
     float: left;
     width: $width+px;
     line-height: $lineHeight+px;
     text-align: $align;
     font-size: 15px;
   }
-
-
-
 }
+
+/*偏移值*/
+@for $i from 1 through 100 {
+  .margin-left-#{$i} {
+    margin-left: (1px*$i);
+  }
+}
+
 

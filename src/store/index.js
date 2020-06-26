@@ -4,6 +4,7 @@ import Vuex from "vuex";
 Vue.use(Vuex);
 import app  from './moudles/App';
 import comm from './moudles/comm'
+import infoDetail from "./moudles/infoDetail";
 export default new Vuex.Store({
     state: {
        /* abc:123*/
@@ -42,6 +43,7 @@ export default new Vuex.Store({
     actions: {},
     modules: {
         app,
-        comm
+        comm,
+        infoDetail
     }
 });

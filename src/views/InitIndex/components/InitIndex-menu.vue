@@ -16,10 +16,12 @@
                         <span slot="title">{{item.meta.title}}</span>
                     </template>
                     <!--二级菜单-->
-                    <el-menu-item-group v-for="(itemChild,indexChild) in item.children" :key="itemChild.id">
+                    <el-menu-item-group v-for="(itemChild) in item.children" :key="itemChild.id">
+                        <template v-if="itemChild.meta.show">
                         <el-menu-item
                                 :index="itemChild.path">{{itemChild.meta.title}}
                         </el-menu-item>
+                        </template>
                     </el-menu-item-group>
                 </el-submenu>
             </template>
@@ -44,8 +46,6 @@
             //(root.$router 查看vue实例的路由) 将实际的路由的各种参数存放到一个变量中
             const routers = reactive(root.$router.options.routes);
             //console.log(routers);
-
-
             return {
                 Collapse,
                 routers,

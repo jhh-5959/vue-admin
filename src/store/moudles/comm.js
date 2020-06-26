@@ -1,4 +1,8 @@
 import { getCategoryAll } from "@/api/new"
+const state={
+    QNYImgUrl:'http://qciihvi1k.bkt.clouddn.com/',
+};
+
 const actions={
     /*方式二 使用 vuex 状态管理*/
     readerClass(){
@@ -15,5 +19,6 @@ const actions={
 export default {
     //使用名命空间
     namespaced:true,
-    actions
+    actions,
+    state
 }

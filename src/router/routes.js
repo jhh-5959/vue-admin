@@ -46,7 +46,8 @@ export const routes = [
                 path: "/console",
                 component: console,
                 meta: {
-                    title: "首页"
+                    title: "首页",
+                    show: 1,
                 }
             }
         ],
@@ -67,21 +68,25 @@ export const routes = [
                 path: "/infoList",
                 component: infoList,
                 meta: {
-                    title: "信息列表"
+                    title: "信息列表",
+                    show: 1,
                 }
             },
             {
                 path: "/infoClass",
                 component: infoClass,
                 meta: {
-                    title: "信息分类"
+                    title: "信息分类",
+                    show: 1
                 }
             },
             {
                 path: "/infoDetail",
+                name:"infoDetail",
                 component: infoDetail,
                 meta: {
-                    title: "信息详情"
+                    title: "信息详情",
+                    show: 0,
                 }
             }
 
@@ -104,7 +109,7 @@ export const routes = [
                 component: userList,
                 meta: {
                     title: "用户分类",
-
+                    show: 1,
                 }
             }
         ],

@@ -99,20 +99,28 @@
                     width="300">
                 <template slot-scope="scope">
                     <el-button
-                            size="mini"
-                            type="danger"
+                            size="mini" type="danger"
                             @click="handleDelete(scope.$index, scope.row)">删除
                     </el-button>
                     <el-button
-                            size="mini"
-                            type="success"
+                            size="mini" type="success"
                             @click="handleEdit(scope.$index, scope.row)">编辑
                     </el-button>
                     <el-button
-                            size="mini"
-                            type="success"
-                            @click="handleEdit(scope.$index, scope.row)">编辑详情
+                            size="mini" type="success"
+                            @click="toInfoDetail(scope.row)">编辑详情
                     </el-button>
+
+                    <!--<router-link
+                            :to="{
+                                name:'infoDetail',
+                                params:{
+                                id:`${scope.row.id}`,
+                                title:`${scope.row.title}`}}"
+                                class="margin-left-10">
+
+                    </router-link>-->
+
                 </template>
             </el-table-column>
         </el-table>
@@ -253,13 +261,13 @@
                 return name;
             };
             //----编辑按钮
-            const formDate=reactive({key:{}});
+            const formDate = reactive({key: {}});
             const titleData = ref('');
             const handleEdit = (index, row) => {
                 /*console.log(index, row);*/
                 titleData.value = '编辑:';
                 ftcData.value = true;
-                formDate.key=row;
+                formDate.key = row;
             };
             //----单个删除按钮
             const handleDelete = (index, row) => {
@@ -407,6 +415,28 @@
                 readerTable();
             });
 
+            const toInfoDetail = (row) => {
+                /*//params传参
+                root.$router.push({
+                    name: 'infoDetail',
+                    params: {
+                        id: row.id,
+                        title: row.title
+                    }
+                });*/
+                /*//冒号传参
+                root.$router.push({
+                    path:`/infoDetail/${row.id}/${row.title}`
+                });*/
+
+
+
+                root.$store.commit('infoDetail/SET_STATE',row);
+                root.$router.push({
+                    path:'/infoDetail'
+                });
+            };
+
             return {
                 //Select选择器(类型+关键字)
                 getType,
@@ -447,6 +477,8 @@
                 total,
                 currentPage,
                 pageSize,
+                //跳转
+                toInfoDetail,
             }
         },
         components: {
