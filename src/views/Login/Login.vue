@@ -131,9 +131,6 @@
             };
 
 
-            console.log(root.$router);
-            console.log(root.$route);
-
             //1.对象/数组用 reactive()定义
             //声明文本内容
             const mag = reactive([
@@ -279,7 +276,7 @@
                 root.$store.dispatch("app/loginApi",data).then(response => {
                         //调用成功返回对应的数据
                         let resData = response.data;
-                        console.log(response);
+                        /*console.log(response);*/
                         //弹出消息框
                         root.$message({
                             message: resData.message,
@@ -287,6 +284,7 @@
                         });
                         //成功登录路由跳转
                         root.$router.replace('/initIndex');
+                        /*console.log(root.$router);*/
                     }
                 ).catch(err => {
                         //调用失败,返回对应的错误

@@ -33,16 +33,9 @@
                 </el-date-picker>
             </el-col>
             <!--关键字-->
-            <el-col :span="3" class="myEl-col keyword">
-                <label>关键字:</label>
-                <el-select v-model="keyWordVal" placeholder="请选择" style="width:101px">
-                    <el-option
-                            v-for="item in keyWordOptions"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value">
-                    </el-option>
-                </el-select>
+            <el-col :span="3" class="myEl-col">
+                <keyWordSelect
+                        :ftcSelectConfig="selectConfig"/>
             </el-col>
             <!--搜索-->
             <el-col :span="3" class="myEl-col search">
@@ -99,14 +92,20 @@
                     width="300">
                 <template slot-scope="scope">
                     <el-button
+                            v-btnPower="'info:detailed'"
                             size="mini" type="danger"
+                            style="display: none"
                             @click="handleDelete(scope.$index, scope.row)">删除
                     </el-button>
                     <el-button
+                            v-btnPower="'info:edit'"
+                            style="display: none"
                             size="mini" type="success"
                             @click="handleEdit(scope.$index, scope.row)">编辑
                     </el-button>
                     <el-button
+                            v-btnPower="'info:111'"
+                            style="display: none"
                             size="mini" type="success"
                             @click="toInfoDetail(scope.row)">编辑详情
                     </el-button>
@@ -153,6 +152,8 @@
     import {reactive, ref, onMounted, watch} from "@vue/composition-api"
     //引入子组件 addDialog
     import addDialog from "./dialog/addDialog";
+    //引入子组件 关键字
+    import keyWordSelect from "@/components/keyWordSelect"
     //引入vue3.0的全局方法
     import {mydialgFn} from "../../tools/dialog"
     //引入接口
@@ -169,6 +170,7 @@
             //Select选择器(类型)
             const typeData = reactive({key: []});
             const typeSelectVal = ref('');
+
             //获取分类列表(vuex 获取公共方法)
             const getType = () => {
                 root.$store.dispatch('comm/readerClass').then(res => {
@@ -179,16 +181,13 @@
                 })
             };
 
-            //Select选择器(关键字)
-            const keyWordOptions = reactive([{
-                value: 1,
-                label: 'ID'
-            }, {
-                value: 2,
-                label: '标题'
-            }]);
-            const keyWordVal = ref(2);
-
+            //关键字的配置
+            const selectConfig=reactive({
+                //---下拉选项
+                options:['id','title'],
+                //---默认选中的关键字
+                selectVal:'title'
+            });
             //日期
             const pickerOptions = reactive({
                 shortcuts: [{
@@ -241,6 +240,21 @@
                 }
                 return req;
             };
+            //调用接口渲染表格数据
+            const readerTable = () => {
+                let req = searchInfo();
+                loading.value = true;
+                getList(req).then(res => {
+                    /*console.log(res.data.data);*/
+                    let data = res.data.data;
+                    tableData.key = data.data;
+                    total.value = data.total;
+                    loading.value = false;
+                }).catch(err => {
+                    loading.value = false;
+                    console.log(err);
+                })
+            };
 
             //表格
             const loading = ref(false);
@@ -257,8 +271,9 @@
             const toType = (row) => {
                 /*console.log(row.categoryId);
                 console.log(typeData.key);*/
-                let name = typeData.key.filter(value => value.id === row.categoryId)[0].category_name;
-                return name;
+                let name = typeData.key.filter(value => value.id === row.categoryId)[0];
+                if (!name){return false}
+                return name.category_name;
             };
             //----编辑按钮
             const formDate = reactive({key: {}});
@@ -351,21 +366,6 @@
                     root.$message.error('删除失败');
                 });
             };
-            //调用接口渲染表格数据
-            const readerTable = () => {
-                let req = searchInfo();
-                loading.value = true;
-                getList(req).then(res => {
-                    /*console.log(res.data.data);*/
-                    let data = res.data.data;
-                    tableData.key = data.data;
-                    total.value = data.total;
-                    loading.value = false;
-                }).catch(err => {
-                    loading.value = false;
-                    console.log(err);
-                })
-            };
             // 表头样式设置
             const headClass = () => {
                 return 'text-align: center;'
@@ -442,8 +442,7 @@
                 getType,
                 typeData,
                 typeSelectVal,
-                keyWordOptions,
-                keyWordVal,
+                selectConfig,
                 //日期
                 pickerOptions,
                 dateVal,
@@ -482,7 +481,8 @@
             }
         },
         components: {
-            addDialog
+            addDialog,
+            keyWordSelect
         },
         onMounted({root}) {
             root.SearchList = root.SearchStates.map(item => {

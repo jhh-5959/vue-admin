@@ -7,7 +7,7 @@ import {getTaken,getUserName} from '@/tools/handleCookie'
 
 //判断 识别开发环境/生产环境,预留空间
 // /api===https://www.web-jshtml.cn/productapi
-const BASEURL = process.env.NODE_ENV === 'production' ? '' : '/jxwDevAPi';
+const BASEURL = process.env.NODE_ENV === 'production' ? process.env.VUE_APP_API : process.env.VUE_APP_API;
 //创建一个axios 实例,配置对应的属性
 const server = axios.create(
     {

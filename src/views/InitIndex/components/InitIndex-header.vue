@@ -38,8 +38,16 @@
             });
 
             const logoutClick=()=>{
+                root.$store.dispatch('app/logout').then(res=>{
+                    if (!res.code){
+                        root.$message({
+                            type:'success',
+                            message:res.message
+                        });
+                    }
+
+                });
                 root.$router.replace('/login');
-                root.$store.dispatch('app/logout');
             };
 
 

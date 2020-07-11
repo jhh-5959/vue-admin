@@ -37,7 +37,7 @@
 
 
 <script>
-    import {ref, reactive, onMounted, watch} from "@vue/composition-api"
+    import {ref, reactive, onMounted,onActivated, watch} from "@vue/composition-api"
     //引入富文本编辑器
     import {quillEditor} from "vue-quill-editor";
     import 'quill/dist/quill.core.css';
@@ -148,8 +148,14 @@
             //挂载完成后
             onMounted(() => {
                 getType();
+                /*readerTable();*/
+            });
+            //keep-alive
+            onActivated(()=>{
+                data.id=root.$store.getters['infoDetail/infoId'];
                 readerTable();
             });
+
             return {
                 form, data, imgUpOptions,
                 onSubmit, getType, readerTable,

@@ -1,13 +1,13 @@
 <template>
     <div id="menu">
         <img src="../../../assets/logo.png" alt="" class="logo">
-        <el-menu default-active="1-4-1"
+        <el-menu :default-active="defaultActive"
                  class="el-menu-vertical-demo"
                  :collapse="Collapse"
                  background-color="transparent"
                  text-color="#fafbfb"
                  router>
-            <template v-for="(item,index) in routers">
+            <template v-for="(item,index) in data.routers">
                 <el-submenu :index="index.toString()" v-if="item.meta.show" :key="item.id">
                     <!--一级菜单-->
                     <template slot="title">
@@ -33,22 +33,48 @@
     //引入 variable 这个scss文件,里面存放着变量
     import "styles/variable.scss";
     // 按需 调用 vue3.0 的api接口
-    import {ref, reactive, computed} from "@vue/composition-api";
+    import {ref, reactive, computed,onMounted,watch} from "@vue/composition-api";
 
     export default {
         name: "InitIndex-menu",
         //使用 3.0 中 setup生命周期函数
         setup(props, {root}) {
+
+            const data=reactive({
+                routers:root.$router.options.routes,
+            });
+
             //(element ui 中的变量 )控制 一级菜单是否默认展开
             const Collapse = computed(() => {
                 return root.$store.state.app.isCollapse;
             });
-            //(root.$router 查看vue实例的路由) 将实际的路由的各种参数存放到一个变量中
-            const routers = reactive(root.$router.options.routes);
-            //console.log(routers);
+            //默认选中的路由
+            const defaultActive=computed(()=>{
+                const { path }=root.$route;
+                return path;
+            });
+
+
+            if (root.$store.getters['power/AddRoutes'].length===0){
+               /* console.log('AddRoutes不存在');*/
+                const AddRoutes=ref(JSON.parse(sessionStorage.getItem('AddRoutes')));
+                /*console.log(AddRoutes.value);*/
+                //添加路由
+                data.routers=AddRoutes.value?data.routers.concat(AddRoutes.value):data.routers;
+               /* console.log(data.routers);*/
+            }
+
+
+
+
+
+
+
             return {
+                data,
                 Collapse,
-                routers,
+                //路由选中状态
+                defaultActive,
             }
         }
     }

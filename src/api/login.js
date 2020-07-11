@@ -19,6 +19,14 @@ export function postLoginApi(data) {
         data
     })
 }
+/*登录接口*/
+export function postLogoutApi(data) {
+    return server.request({
+        method: 'post',
+        url:'/logout/',
+        data
+    })
+}
 
 
 /*注册接口*/

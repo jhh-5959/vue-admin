@@ -2,252 +2,284 @@
     <div>
         <el-row :gutter="8">
             <!--关键字-->
-            <el-col :span="3" class="myEl-col keyword">
-                <label>关键字:</label>
-                <el-select v-model="data.key.keyWordVal" placeholder="请选择" style="width:101px" clearable>
-                    <el-option
-                            v-for="item in data.key.keyWordOptions"
-                            :key="item.value"
-                            :label="item.label"
-                            :value="item.value">
-                    </el-option>
-                </el-select>
+            <el-col :span="3">
+                <keyWordSelect :ftcSelectConfig="selectConfig"
+                               :ftcNowSelect.sync="data.nowSelect"/>
             </el-col>
             <!--搜索框-->
             <el-col :span="3" class="myEl-col search">
-                <el-input v-model="data.key.searchVal" placeholder="请输入内容" ></el-input>
+                <el-input v-model="data.key.searchVal" placeholder="请输入内容"></el-input>
             </el-col>
             <el-col :span="1" class="myEl-col searchBtn">
-                <el-button type="danger">搜索</el-button>
+                <el-button type="danger" @click="handleSearch">搜索</el-button>
             </el-col>
             <!--新增按钮-->
             <el-col :span="5" class="myEl-col addBtn">
-                <el-button type="danger" @click="open">新增</el-button>
+                <el-button type="danger" @click="open">添加用户</el-button>
             </el-col>
         </el-row>
         <!--空白占位-->
         <div class="blank1"></div>
         <!--表格-->
-        <el-table
-                :data="data.key.tableData"
-                :cell-style="rowClass"
-                :header-cell-style="headClass"
-                border
-                @selection-change="handleSelectionChange"
-                style="width: 100%;">
-            <el-table-column
-                    width="45"
-                    type="selection">
-            </el-table-column>
-            <el-table-column
-                    prop="userName"
-                    label="邮箱/用户名"
-            >
-            </el-table-column>
-            <el-table-column
-                    prop="name"
-                    label="真实姓名"
-                    width="204">
-            </el-table-column>
-            <el-table-column
-                    prop="tel"
-                    label="手机号码"
-                    width="240">
-            </el-table-column>
-            <el-table-column
-                    prop="address"
-                    label="地区"
-                    width="200">
-
-            </el-table-column>
-            <el-table-column
-                    prop="role"
-                    label="角色"
-                    width="238">
-            </el-table-column>
-            <el-table-column
-                    label="禁启用状态"
-                    width="110">
-                <template slot-scope="scope">
-                    <el-switch
-                            v-model="data.key.statusValue"
-                            active-color="#13ce66"
-                            inactive-color="#ff4949">
-                    </el-switch>
-                </template>
-            </el-table-column>
-            <el-table-column
-                    label="操作"
-                    width="186">
-                <template slot-scope="scope">
-                    <el-button
-                            size="mini"
-                            type="danger"
-                            @click="handleDelete(scope.$index, scope.row)">删除
-                    </el-button>
-                    <el-button
-                            size="mini"
-                            type="success"
-                            @click="handleEdit(scope.$index, scope.row)">编辑
-                    </el-button>
-                </template>
-            </el-table-column>
-        </el-table>
-        <!--空白占位-->
-        <div class="blank2"></div>
+        <tableVue ref="ctfReaderTable"
+                  :ftcTableConfig="tableConfig"
+                  :ftcUpdateData.sync="data.key.updateObject">
+            <!--switchSlot插槽-->
+            <template v-slot:switchSlot="slotData">
+                <el-switch
+                        @change="handleActive(slotData.slotData)"
+                        v-model="slotData.slotData.status"
+                        active-value="2"
+                        inactive-value="1"
+                        active-color="#13ce66"
+                        inactive-color="#ff4949">
+                </el-switch>
+            </template>
+            <!--optionSlot插槽-->
+            <template v-slot:optionSlot="slotData">
+                <el-button
+                        size="mini"
+                        type="danger"
+                        @click="handleDelete(slotData.slotData)">删除
+                </el-button>
+                <el-button
+                        size="mini"
+                        type="success"
+                        @click="handleEdit(slotData.slotData)">编辑
+                </el-button>
+            </template>
+            <!---->
+        </tableVue>
         <!--批量删除-->
         <el-button plain size="small" @click="AllDelFn">批量删除</el-button>
-        <!--分页-->
-        <el-pagination
-                background
-                @size-change="handleSizeChange"
-                @current-change="handleCurrentChange"
-                :current-page="data.key.currentPage"
-                :page-sizes="data.key.pageSizes"
-                :page-size="data.key.pageSize"
-                layout="total, sizes, prev, pager, next, jumper"
-                :total="data.key.total"
-                style="float: right">
-        </el-pagination>
-        <!--添加弹窗子组件-->
-        <UseraddDialog :ftc.sync="data.key.ftcData" /><!--@ctf="ctfFn"-->
+        <!--弹窗子组件-->
+        <UseraddDialog
+                :ftc.sync="data.key.ftcData"
+                :ftcSelect.sync="data.ftcSelect"
+        /><!--@ctf="ctfFn"-->
     </div>
 </template>
 
 <script>
     //使用vue3.0api
-    import {reactive, ref} from "@vue/composition-api"
-    //引入子组件 addDialog
-    import UseraddDialog from "./dialog/UseraddDialog";
+    import {reactive, ref, watch} from "@vue/composition-api"
+    //引入子组件 addDialog,
+    import UseraddDialog from "./dialog/UseraddDialog"
+    //引入子组件 关键字
+    import keyWordSelect from "@/components/keyWordSelect"
+    //引入子组件 表格
+    import tableVue from "@/components/table"
     //引入vue3.0的全局方法
     import {mydialgFn} from "../../tools/dialog"
+    //调用user API接口
+    import {userDelete, getActives, getUserBtnPower} from "../../api/user";
+
     export default {
         name: "UserLIst",
-        setup(props, {root}) {
+        setup(props, {root, refs}) {
             //声明全局方法
             const {DelFn} = mydialgFn();
             //所有数据
-            const data=reactive({key:{
-                //Select选择器(关键字)
-                   keyWordOptions: [{
-                       value: 1,
-                       label: '手机号'
-                   }, {
-                       value: 2,
-                       label: '姓名'
-                   }],
-                    keyWordVal:'',
+            const data = reactive({
+                key: {
                     //搜索
-                    searchVal:'',
-                    //表格
-                    tableData:[{
-                        userName: '409019683@qq.com',
-                        name: '张三',
-                        tel: 13588888888,
-                        address: '广东省 深圳市 南山区',
-                        role:'超管'
-                    },{
-                        userName: '409019683@qq.com',
-                        name: '张三',
-                        tel: 13588888888,
-                        address: '广东省 深圳市 南山区',
-                        role:'信息管理'
-                    },{
-                        userName: '409019683@qq.com',
-                        name: '张三',
-                        tel: 13588888888,
-                        address: '广东省 深圳市 南山区',
-                        role:'用户管理'
-                    },{
-                        userName: '409019683@qq.com',
-                        name: '张三',
-                        tel: 13588888888,
-                        address: '广东省 深圳市 南山区',
-                        role:'信息管理'
-                    }],
-                    //分页
-                    currentPage:1,
-                    pageSizes:[10, 20, 30, 40],
-                    pageSize:10,
-                    total:100,
+                    searchVal: '',
                     //新增按钮开关
-                    ftcData:false,
-                    //权限状态
-                    statusValue:true,
-                    //选择框
-                    multipleSelection:[]
+                    ftcData: false,
+                    //获取子组件传递的数据
+                    updateObject: {}
+                },
+                //数据传输给弹窗子组件
+                ftcSelect: {},
+                //节流阀
+                handleActiveStatus: true,
+                //当前选中的值,由子组件keyWordSelect 回传
+                nowSelect: {}
+            });
+            //关键字的相关配置
+            const selectConfig = reactive({
+                //---下拉选项
+                options: ['phone', 'truename', 'username'],
+                //---默认选中的关键字
+                selectVal: 'truename'
+            });
+            //表格的相关配置
+            const tableConfig = reactive({
+                //表头
+                tHead: [
+                    {label: '邮箱/用户名', prop: 'username'},
+                    {label: '真实姓名', prop: 'truename', width: "204"},
+                    {label: '手机号码', prop: 'phone', width: "240"},
+                    {label: '地区', prop: 'region', width: "200"},
+                    {label: '系统', prop: 'role', width: "238"},
+                    {label: '禁启用状态', width: "110", type: 'slot', slotName: 'switchSlot'},
+                    {label: '操作', width: "186", type: 'slot', slotName: 'optionSlot'},
+                ],
+                //是否需要选中框
+                isSelect: true,
+                //渲染页面传入的接口参数
+                apiParams: {
+                    url: "getUserList",
+                    method: 'post',
+                    data: {
+                        username: "",
+                        truename: "",
+                        phone: "",
+                        /*//分页功能的相关配置(已配置无效)
+                        pageNumber: 1,
+                        pageSize: 100,*/
+                    }
+                },
+                //分页功能的相关配置
+                pageSizes: [3, 5, 7, 9],
+                currentPage: 1,
+                pageSize: 3,
+            });
 
-                }});
-            //表格中方法
-            const handleSelectionChange = (val) => {
-                data.key.multipleSelection = val;
+            //点击添加按钮
+            const open = () => {
+                data.key.ftcData = true;
+                data.ftcSelect.type = '新增';
             };
-            const handleEdit = (index, row) => {
-                console.log(index, row);
-                open();
+            //---编辑
+            const handleEdit = (row) => {
+                /*console.log('row-----------');
+                console.log(row);*/
+                data.key.ftcData = true;
+                data.ftcSelect = Object.assign({}, row);
+                data.ftcSelect.type = '编辑';
+                getBtnPower.then(res=>data.ftcSelect.btnPowers=res.data.data);
             };
-            const handleDelete = (index, row) => {
-                console.log(index, row);
+            //调用获取所有按钮用户权限
+            const getBtnPower = new Promise((resolve)=>{
+                getUserBtnPower().then(res=> resolve(res));
+            });
+
+            //---单个删除
+            const handleDelete = (row) => {
                 //单个删除方法
-                DelFn('确定删除此消息','提示',{
+                DelFn('确定删除此消息', '提示', {
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
                     type: 'warning',
                     center: true
+                }, () => {
+                    delApi({id: [row.id]});
+                }, () => {
+                    root.$message({
+                        type: 'success',
+                        message: '取消删除',
+                    })
                 });
             };
-            // 表头样式设置
-            const headClass = () => {
-                return 'text-align: center;'
-            };
-            // 表格样式设置
-            const rowClass = () => {
-                return 'text-align: center;'
-            };
-            //新增按钮
-            const open = () => {
-                data.key.ftcData=true;
-            };
-            //全部删除方法
-            const AllDelFn=()=>{
-                DelFn('确定要全部删除','提示',{
+            //批量删除方法
+            const AllDelFn = () => {
+                let updateObject = data.key.updateObject;
+                if (!updateObject.id || !updateObject.id.length) {
+                    root.$message.error('请勾选对应的选择框');
+                    return false
+                }
+                DelFn('确定要全部删除', '提示', {
                     confirmButtonText: '确定',
                     cancelButtonText: '取消',
                     type: 'warning',
                     center: true
-                },function () {
-                    console.log(123);
+                }, () => {
+                    let resData = {id: updateObject.id};
+                    delApi(resData);
+                }, () => {
+                    root.$message({
+                        type: 'success',
+                        message: '取消删除',
+                    })
                 });
             };
             /*//子组件给父组件传值所调用的方法
             const ctfFn=(val)=>{
                 ftcData.value=val;
             };*/
-            //分页
-            const handleSizeChange=(val)=>{
-                console.log(`每页 ${val} 条`);
+            //改变用户禁启用状态
+            const handleActive = (slotData) => {
+                //节流阀
+                if (data.handleActiveStatus) {
+                    data.handleActiveStatus = false;
+                    getActives({id: slotData.id, status: slotData.status})
+                        .then(res => {
+                            root.$message({
+                                type: 'success',
+                                message: res.data.message
+                            });
+                            data.handleActiveStatus = true;
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            data.handleActiveStatus = true;
+                        });
+                }
+
+
             };
-            const handleCurrentChange=(val)=> {
-                console.log(`当前页: ${val}`);
+
+            //调用删除接口
+            const delApi = (resData) => {
+                //调用删除接口
+                userDelete(resData)
+                    .then(res => {
+                        /* console.log(res.data);*/
+                        root.$message({
+                            type: 'success',
+                            message: res.data.message,
+                        });
+                        readerTableDate();
+                    })
+                    .catch(err => console.log(err));
             };
+            //调用子组件中刷新页面方法
+            const readerTableDate = () => {
+                refs.ctfReaderTable.initReaderTable();
+            };
+            //搜索按钮
+            const handleSearch = () => {
+                // 合并 关键字和搜索内容
+                let resData = {};
+                for (let key in data.nowSelect) {
+                    resData[key] = data.key.searchVal;
+                }
+                refs.ctfReaderTable.searchTable(resData);
+                /*console.log(data.nowSelect);
+                console.log(data.key.searchVal);*/
+                data.key.searchVal = '';
+
+            };
+
+
+
             return {
-                data,
-                //表格
-                handleSelectionChange, handleEdit, handleDelete, headClass, rowClass,
+                data, selectConfig, tableConfig,
                 //添加按钮
                 open,
                 //全部删除按钮
-                AllDelFn,
+                AllDelFn, delApi,
                 /*//子组件给父组件传值
                 ctfFn*/
                 //分页
-                handleSizeChange,handleCurrentChange
+                handleEdit, handleDelete,
+                //调用子组件中刷新页面方法
+                readerTableDate,
+                //改变用户禁启用状态
+                handleActive,
+                //搜索按钮
+                handleSearch,
+                getBtnPower,
             }
         },
         components: {
-            UseraddDialog
+            UseraddDialog,
+            keyWordSelect,
+            tableVue
         },
         onMounted() {
+
         },
     }
 </script>
